@@ -1,0 +1,276 @@
+devtools::check(cran=TRUE)
+rhub::check_for_cran()
+install.packages('rhub')
+rhub::check_for_cran()
+?rhubv2
+rhub::rhub_setup()
+rhub::rhub_setup()
+rhub::rhub_doctor()
+gitcreds::gitcreds_set()
+rhub::rhub_doctor()
+rhub::rhub_doctor()
+rhub::rhub_check()
+?tmpinv
+## Example 2: AP/TM reconstruction on a 40x40 matrix
+## with zero diagonal and reduced (20,20) submodels
+## (20 percent known entries)
+set.seed(123456789)
+m <- 40L
+p <- 40L
+# sample (dataset)
+X_true <- abs(matrix(rnorm(m * p), nrow = m, ncol = p))
+diag(X_true) <- 0                                 # zero diagonal
+idx <- sample.int(
+m * p,
+size = max(1L, floor(0.2 * (m * p))),         # 20 percent known
+replace = FALSE
+)
+M     <- diag(m * p)[idx, , drop = FALSE]
+b_row <- rowSums(X_true)
+b_col <- colSums(X_true)
+b_val <- matrix(as.numeric(X_true)[idx], ncol = 1L)
+# model (reduced models of size 20x20)
+result <- tmpinv(
+M = M,
+b_row = b_row,
+b_col = b_col,
+b_val = b_val,
+zero_diagonal = TRUE,
+reduced = c(20L, 20L),
+bounds = c(0, NA),
+r = 1L,
+alpha = 1.0
+)
+print("true X:")
+print(round(X_true, 4))
+print("X_hat:")
+print(round(result$x, 4))
+# numerical stability across submodels
+kC <- sapply(result$model, function(CLSP) CLSP$kappaC)
+kB <- sapply(result$model, function(CLSP) CLSP$kappaB)
+kA <- sapply(result$model, function(CLSP) CLSP$kappaA)
+print("\nNumerical stability (min-max across models):")
+print(paste("  kappaC :", range(kC)))
+print(paste("  kappaB :", range(kB)))
+print(paste("  kappaA :", range(kA)))
+# diagnostics (min-max)
+nrmse <- sapply(result$model, function(CLSP) CLSP$nrmse)
+x_low <- unlist(lapply(result$model, function(CLSP) CLSP$x_lower))
+x_up  <- unlist(lapply(result$model, function(CLSP) CLSP$x_upper))
+print("\nGoodness-of-fit (min-max across models):")
+print(paste("  NRMSE :", range(nrmse)))
+print(paste("  Diagnostic band (min):", range(x_low)))
+print(paste("  Diagnostic band (max):", range(x_up)))
+# bootstrap t-tests across all block models
+print("\nBootstrap t-tests:")
+tests <- lapply(
+result$model,
+function(CLSP) rclsp::ttest(
+CLSP,
+sample_size = 30L,
+seed = 123456789L,
+distribution = rnorm,
+partial = TRUE
+)
+)
+print(tests)
+result <- tmpinv(
+b_row = c(1,2,3,4,5),
+b_col = c(6,7,8,9,0),
+r = 1L,
+alpha = 1.0
+)
+print("X_hat:")
+print(round(result$x, 4))
+update.packages()
+?tmpinv
+## Example 2: AP/TM reconstruction on a 40x40 matrix
+## with zero diagonal and reduced (20,20) submodels
+## (20 percent known entries)
+set.seed(123456789)
+m <- 40L
+p <- 40L
+# sample (dataset)
+X_true <- abs(matrix(rnorm(m * p), nrow = m, ncol = p))
+diag(X_true) <- 0                                 # zero diagonal
+idx <- sample.int(
+m * p,
+size = max(1L, floor(0.2 * (m * p))),         # 20 percent known
+replace = FALSE
+)
+M     <- diag(m * p)[idx, , drop = FALSE]
+b_row <- rowSums(X_true)
+b_col <- colSums(X_true)
+b_val <- matrix(as.numeric(X_true)[idx], ncol = 1L)
+# model (reduced models of size 20x20)
+result <- tmpinv(
+M = M,
+b_row = b_row,
+b_col = b_col,
+b_val = b_val,
+zero_diagonal = TRUE,
+reduced = c(20L, 20L),
+bounds = c(0, NA),
+r = 1L,
+alpha = 1.0
+)
+print("true X:")
+print(round(X_true, 4))
+print("X_hat:")
+print(round(result$x, 4))
+# numerical stability across submodels
+kC <- sapply(result$model, function(CLSP) CLSP$kappaC)
+kB <- sapply(result$model, function(CLSP) CLSP$kappaB)
+kA <- sapply(result$model, function(CLSP) CLSP$kappaA)
+print("\nNumerical stability (min-max across models):")
+print(paste("  kappaC :", range(kC)))
+print(paste("  kappaB :", range(kB)))
+print(paste("  kappaA :", range(kA)))
+# diagnostics (min-max)
+nrmse <- sapply(result$model, function(CLSP) CLSP$nrmse)
+x_low <- unlist(lapply(result$model, function(CLSP) CLSP$x_lower))
+x_up  <- unlist(lapply(result$model, function(CLSP) CLSP$x_upper))
+print("\nGoodness-of-fit (min-max across models):")
+print(paste("  NRMSE :", range(nrmse)))
+print(paste("  Diagnostic band (min):", range(x_low)))
+print(paste("  Diagnostic band (max):", range(x_up)))
+# bootstrap t-tests across all block models
+print("\nBootstrap t-tests:")
+tests <- lapply(
+result$model,
+function(CLSP) rclsp::ttest(
+CLSP,
+sample_size = 30L,
+seed = 123456789L,
+distribution = rnorm,
+partial = TRUE
+)
+)
+print(tests)
+## Example 1: AP/TM reconstruction on a symmetric 20x20 matrix
+## (10 percent known entries)
+set.seed(123456789)
+m <- 20L
+p <- 20L
+# sample (dataset)
+X_true <- abs(matrix(rnorm(m * p), nrow = m, ncol = p))
+X_true <- 0.5 * (X_true + t(X_true))              # symmetric
+idx <- sample.int(
+m * p,
+size = max(1L, floor(0.1 * (m * p))),         # 10 percent known
+replace = FALSE
+)
+M     <- diag(m * p)[idx, , drop = FALSE]
+b_row <- rowSums(X_true)
+b_col <- colSums(X_true)
+b_val <- matrix(as.numeric(X_true)[idx], ncol = 1L)
+# model (unique MNBLUE estimator)
+result <- tmpinv(
+M = M,
+b_row = b_row,
+b_col = b_col,
+b_val = b_val,
+bounds = c(0, NA),                            # non-negativity
+symmetric = TRUE,
+r = 1L,
+alpha = 1.0
+)
+# coefficients
+print("true X:")
+print(round(X_true, 4))
+print("X_hat:")
+print(round(result$x, 4))
+# numerical stability
+print("\nNumerical stability:")
+print(paste("  kappaC :", result$model$kappaC))
+print(paste("  kappaB :", result$model$kappaB))
+print(paste("  kappaA :", result$model$kappaA))
+# diagnostics
+print("\nGoodness-of-fit:")
+print(paste("  NRMSE :", result$model$nrmse))
+print(paste("  Diagnostic band (min):", min(result$model$x_lower)))
+print(paste("  Diagnostic band (max):", max(result$model$x_upper)))
+# bootstrap NRMSE t-test
+tt <- rclsp::ttest(
+result$model,
+sample_size = 30L,
+seed = 123456789L,
+distribution = rnorm,
+partial = TRUE
+)
+print("\nBootstrap t-test:")
+print(tt)
+tmpinv(b_row=c(1,2,3,4,5), b_col=(6,7,8,9,0), zero_diagonal=TRUE)
+result <- tmpinv(b_row=c(1,2,3,4,5), b_col=c(6,7,8,9,0), zero_diagonal=TRUE); result$x
+result <- tmpinv(b_row=c(1,2,3,4,5), b_col=c(6,7,8,9,0), zero_diagonal=TRUE, reduced=c(3,3)); result$x
+result <- tmpinv(b_row=c(1,2,3,4,5), b_col=c(6,7,8,9,0), zero_diagonal=TRUE, reduced=c(3,3), bounds=c(0,NA), symmetric=TRUE); result$x
+array([[-2.94083045e-14,  2.66666667e+00,  1.66666667e+00,
+## Example 1: AP/TM reconstruction on a symmetric 20x20 matrix
+## (10 percent known entries)
+set.seed(123456789)
+m <- 20L
+p <- 20L
+# sample (dataset)
+X_true <- abs(matrix(rnorm(m * p), nrow = m, ncol = p))
+X_true <- 0.5 * (X_true + t(X_true))              # symmetric
+idx <- sample.int(
+m * p,
+size = max(1L, floor(0.1 * (m * p))),         # 10 percent known
+replace = FALSE
+)
+M     <- diag(m * p)[idx, , drop = FALSE]
+b_row <- rowSums(X_true)
+b_col <- colSums(X_true)
+b_val <- matrix(as.numeric(X_true)[idx], ncol = 1L)
+# model (unique MNBLUE estimator)
+result <- tmpinv(
+M = M,
+b_row = b_row,
+b_col = b_col,
+b_val = b_val,
+bounds = c(0, NA),                            # non-negativity
+symmetric = TRUE,
+r = 1L,
+alpha = 1.0
+)
+# coefficients
+print("true X:")
+print(round(X_true, 4))
+print("X_hat:")
+print(round(result$x, 4))
+# numerical stability
+print("\nNumerical stability:")
+print(paste("  kappaC :", result$model$kappaC))
+print(paste("  kappaB :", result$model$kappaB))
+print(paste("  kappaA :", result$model$kappaA))
+# diagnostics
+print("\nGoodness-of-fit:")
+print(paste("  NRMSE :", result$model$nrmse))
+print(paste("  Diagnostic band (min):", min(result$model$x_lower)))
+print(paste("  Diagnostic band (max):", max(result$model$x_upper)))
+# bootstrap NRMSE t-test
+tt <- rclsp::ttest(
+result$model,
+sample_size = 30L,
+seed = 123456789L,
+distribution = rnorm,
+partial = TRUE
+)
+print("\nBootstrap t-test:")
+print(tt)
+rhub::cran_check()
+rhub::setup()
+?rhub
+rhub::rhub_setup()
+rhub::rhub_check()
+devtools::check(cran=TRUE)
+rhub::rhub_check()
+devtools::check(cran=TRUE)
+devtools::submit_cran()
+?eval
+??eval()
+?eval()
+eval()
+eval("a=1", envir = parent.frame())
+devtools::document()
+devtools::document()
