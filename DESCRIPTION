@@ -1,7 +1,7 @@
 Package: rtmpinvi
 Type: Package
 Title: Interactive Tabular Matrix Problems via Pseudoinverse Estimation
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: 
     c(
         person("Ilya", "Bolotov", email = "ilya.bolotov@vse.cz",
@@ -27,7 +27,7 @@ Language: en-US
 Depends: 
     R (>= 4.2)
 Imports: 
-    rtmpinv (>= 0.2.0)
+    rtmpinv (>= 0.3.0)
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
