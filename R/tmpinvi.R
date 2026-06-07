@@ -7,7 +7,8 @@
 #'   \code{b_val} and the corresponding identity-subset model matrix
 #'   \code{M} internally. Missing entries (\code{NA}) are ignored.
 #'   If all entries of \code{ival} are \code{NA}, no prior information
-#'   is used and \code{b_val} and \code{M} are set to \code{NULL}.
+#'   is used and \code{b_val} and \code{M} are not passed to
+#'   \code{rtmpinv::tmpinv()}.
 #'   When \code{ival} is provided, it overrides any \code{b_val} or
 #'   \code{M} arguments supplied through \code{...}.
 #'
@@ -137,6 +138,7 @@
 tmpinvi <- function(ival=NULL, ibounds=NULL, preestimation=NULL,
                     postestimation=NULL, update=FALSE, ...) {
   dots     <- list(...)
+  
   # adjust and preprocess options
   if (!is.null(ival)) {
     if (is.data.frame(ival)) ival <- as.matrix(ival)
@@ -145,7 +147,7 @@ tmpinvi <- function(ival=NULL, ibounds=NULL, preestimation=NULL,
       dots <- dots[!(names(dots) %in% c("b_val", "M"))]
   }
   if (!is.null(ibounds) && !is.null(names(dots)))
-    dots <- dots[setdiff(names(dots), "bounds")]
+    dots <- dots[!(names(dots) %in% "bounds")]
   if (!is.null(preestimation) && !is.function(preestimation))
     stop("preestimation must be a function.")
   if (!is.null(postestimation) && !is.function(postestimation))
@@ -154,21 +156,18 @@ tmpinvi <- function(ival=NULL, ibounds=NULL, preestimation=NULL,
   # run preestimation function (= multiple commands)
   if (!is.null(preestimation))
     preestimation(ival)
+  
   # perform estimation
-  M     <- NULL
-  b_val <- NULL
-  if (!is.null(ival)) {
-    if (!all(is.na(ival))) {
-      b_val <- as.vector(t(ival))
-      M     <- diag(length(b_val))[!is.na(b_val), , drop = FALSE]
-      b_val <- b_val[!is.na(b_val)]
-    }
+  if (!is.null(ival) && !all(is.na(ival))) {
+    b_raw       <- as.vector(t(ival))
+    dots$M      <- diag(length(b_raw))[!is.na(b_raw), , drop = FALSE]
+    dots$b_val  <- b_raw[!is.na(b_raw)]
   }
-  bounds        <- if (!is.null(ibounds)) ibounds else NULL
+  if (!is.null(ibounds))
+    dots$bounds <- ibounds
   result        <- list()
-  result$result <- do.call(rtmpinv::tmpinv,
-                           c(list(b_val=b_val, M=M, bounds=bounds),
-                             dots))
+  result$result <- do.call(rtmpinv::tmpinv, dots)
+  
   # run postestimation command/program (= multiple commands)
   if (!is.null(postestimation)) {
     if (isTRUE(result$result$full)) postestimation(result$result$model)
@@ -176,16 +175,19 @@ tmpinvi <- function(ival=NULL, ibounds=NULL, preestimation=NULL,
       postestimation(result$result$model[[i]], i)
     }
   }
+  
   # generate, update, or replace data from result$x
-  if (isTRUE(update)) {
-    if (!is.null(ival)) {
-      if (nrow(ival) != nrow(result$result$x)                                ||
-          ncol(ival) != ncol(result$result$x))
-        stop("Dimensions of ival and result$x do not match.")
-      ival[is.na(ival)] <- result$result$x[is.na(ival)]
-      result$data      <- ival
-    } else result$data <- result$result$x
-  } else   result$data <- result$result$x
+  x <- as.matrix(result$result$x)
+  if (isTRUE(update) && !is.null(ival)) {
+    if (nrow(ival) != nrow(x) || ncol(ival) != ncol(x))
+      stop("Dimensions of ival and result$x do not match.")
+    data          <- as.matrix(ival)
+    missing       <- is.na(data)
+    data[missing] <- x[missing]
+  } else {
+    data          <- x
+  }
+  result$data <- data
   
   class(result) <- "tmpinvi"
   result

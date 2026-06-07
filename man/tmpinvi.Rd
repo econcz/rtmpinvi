@@ -21,7 +21,8 @@ missing, \code{ival} is flattened and used to construct
 \code{b_val} and the corresponding identity-subset model matrix
 \code{M} internally. Missing entries (\code{NA}) are ignored.
 If all entries of \code{ival} are \code{NA}, no prior information
-is used and \code{b_val} and \code{M} are set to \code{NULL}.
+is used and \code{b_val} and \code{M} are not passed to
+\code{rtmpinv::tmpinv()}.
 When \code{ival} is provided, it overrides any \code{b_val} or
 \code{M} arguments supplied through \code{...}.}
 
