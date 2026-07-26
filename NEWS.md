@@ -1,3 +1,8 @@
+# rtmpinvi 2.0.0
+
+## Changes
+* Synchronized the package with `rtmpinv` 2.0.0.
+
 # rtmpinvi 1.1.0
 
 ## Changes
